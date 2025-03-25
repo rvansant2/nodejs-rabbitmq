@@ -2,6 +2,8 @@
 
 A simple example and demonstration of RabbitMQ with nodejs, which allows for low latency and complex message distributions. There is a publisher that will iterate over a list of numbers and place them in a proper queue for the approprate consumers to listen to.
 
+This project was coded a long time ago and has sit on my computer since. I now added some enhancements and best development practices to support extending and expanding this example, if needed.
+
 ## Required
 
 - nodejs ^v20.x (for local execution)
