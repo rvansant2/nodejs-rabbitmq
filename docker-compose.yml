@@ -1,0 +1,80 @@
+
+services:
+  rabbitmq-server:
+    image: rabbitmq:3.11.3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - nodejs-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  publisher:
+    build: ./publisher
+    environment:
+      - AMQP_CONNECT_SERVER=${AMQP_CONNECT_SERVER}
+      - INPUT_NUMBERS=${INPUT_NUMBERS}
+    networks:
+      - nodejs-rabbitmq
+    depends_on:
+      rabbitmq-server:
+        condition: service_healthy
+    command: ["/bin/sh", "-c", "./wait-for-it.sh rabbitmq-server 5672 -- node publisher.js >> logs/publisher.log 2>&1"]
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  consumer-odd:
+    build: ./consumer
+    environment:
+      - AMQP_CONNECT_SERVER=${AMQP_CONNECT_SERVER}
+    networks:
+      - nodejs-rabbitmq
+    depends_on:
+      rabbitmq-server:
+        condition: service_healthy
+    command: ["/bin/sh", "-c", "./wait-for-it.sh rabbitmq-server 5672 -- node consumer.js odd >> logs/consumer-odd.log 2>&1"]
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  consumer-even:
+    build: ./consumer
+    environment:
+      - AMQP_CONNECT_SERVER=${AMQP_CONNECT_SERVER}
+    networks:
+      - nodejs-rabbitmq
+    depends_on:
+      rabbitmq-server:
+        condition: service_healthy
+    command: ["/bin/sh", "-c", "./wait-for-it.sh rabbitmq-server 5672 -- node consumer.js even >> logs/consumer-even.log 2>&1"]
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  nodejs-rabbitmq:
